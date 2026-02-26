@@ -1,3 +1,5 @@
-/.NoiseFiles/
-/.SpeechFiles/
+/NoiseFiles/
+/SpeechFiles/
 /.vscode/
+__pycache__
+Canadian
