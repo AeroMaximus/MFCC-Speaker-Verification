@@ -23,10 +23,14 @@ def extract_mfcc(audio_path: str, sr: float | None = 16000, n_mfcc: int = 13, fr
     
     if y is None:
         logging.error(f"Failed to load audio from {audio_path}")
-        raise
+        raise ValueError("Failed to load audio")
                        
     mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc, n_fft=frame_length, hop_length=hop_length)
-    return mfccs.T
+    
+    # Apply CMVN
+    cmvn_mfccs = (mfccs - np.mean(mfccs, axis=0)) / np.std(mfccs, axis=0)
+    
+    return cmvn_mfccs.T
 
 from sklearn.mixture import GaussianMixture
 
