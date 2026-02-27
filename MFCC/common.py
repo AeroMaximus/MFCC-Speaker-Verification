@@ -21,3 +21,39 @@ def find_files_with_extension(directory, extensions):
                     break
 
     return matching_files
+
+import numpy as np
+import hashlib
+
+def array_to_hash(array):
+    # Convert the array to a string
+    array_str = str(array)
+    
+    # Create a sha256 hash object
+    hash_object = hashlib.sha256()
+    
+    # Update the hash object with the bytes of the array string
+    hash_object.update(array_str.encode('utf-8'))
+    
+    # Get the hexadecimal representation of the hash
+    full_hash = hash_object.hexdigest()
+    
+    return full_hash
+
+def npy_to_hash(npy_path):
+    # Load the array from the .npy file
+    array = np.load(npy_path)
+    
+    # Convert the array to a string representation
+    array_str = str(array)
+    
+    # Create a sha256 hash object
+    hash_object = hashlib.sha256()
+    
+    # Update the hash object with the bytes of the array string
+    hash_object.update(array_str.encode('utf-8'))
+    
+    # Get the hexadecimal representation of the hash
+    full_hash = hash_object.hexdigest()
+    
+    return full_hash
