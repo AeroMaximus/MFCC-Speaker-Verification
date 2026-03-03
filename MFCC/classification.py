@@ -28,7 +28,12 @@ def extract_mfcc(audio_path: str, sr: float | None = 16000, n_mfcc: int = 13, fr
     mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc, n_fft=frame_length, hop_length=hop_length)
     
     # Apply CMVN
-    cmvn_mfccs = (mfccs - np.mean(mfccs, axis=0)) / np.std(mfccs, axis=0)
+    mean = np.mean(mfccs, axis=0)
+    std = np.std(mfccs, axis=0)
+    cmvn_mfccs = (mfccs - mean) / (std + 1e-6)
+    
+    # Set the first coefficient to zero to eliminate engergy dependence
+    cmvn_mfccs[0, :] = 0
     
     # Calculate deltas and delta-deltas if requested
     if n_deltas == 1 or n_deltas == 2:
@@ -41,7 +46,7 @@ def extract_mfcc(audio_path: str, sr: float | None = 16000, n_mfcc: int = 13, fr
     else:
         logging.error(f"{n_deltas} is an invalid number of deltas, only 0, 1, or 2 are allowed.")
         raise ValueError("Number of deltas is an invalid number")
-
+    
     return cmvn_mfccs.T
 
 from sklearn.mixture import GaussianMixture
