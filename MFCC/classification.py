@@ -14,10 +14,10 @@ def load_gmm_model(model_path: str) -> GaussianMixture:
         logging.error(f"Failed to load model from {model_path}: {str(e)}")
         raise
 
-def extract_mfcc(audio_path: str, sr: float | None = 16000, n_mfcc: int = 13, frame_length: int = 2048, hop_length: int = 512):
+def extract_mfcc(audio_path: str, sr: float | None = 16000, n_mfcc: int = 13, frame_length: int = 2048, hop_length: int = 512, n_deltas: int = 2):
     if not os.path.exists(audio_path):
-        logging.error(f"Model path {audio_path} does not exist.")
-        raise FileNotFoundError(f"Model path {audio_path} does not exist.")
+        logging.error(f"Audio path {audio_path} does not exist.")
+        raise FileNotFoundError(f"Audio path {audio_path} does not exist.")
     
     y, sr = librosa.load(audio_path, sr=sr)
     
@@ -30,6 +30,18 @@ def extract_mfcc(audio_path: str, sr: float | None = 16000, n_mfcc: int = 13, fr
     # Apply CMVN
     cmvn_mfccs = (mfccs - np.mean(mfccs, axis=0)) / np.std(mfccs, axis=0)
     
+    # Calculate deltas and delta-deltas if requested
+    if n_deltas == 1 or n_deltas == 2:
+        deltas = librosa.feature.delta(cmvn_mfccs)
+        cmvn_mfccs = np.vstack((cmvn_mfccs, deltas))
+        
+        if n_deltas == 2:
+            delta_deltas = librosa.feature.delta(deltas)
+            cmvn_mfccs = np.vstack((cmvn_mfccs, delta_deltas))
+    else:
+        logging.error(f"{n_deltas} is an invalid number of deltas, only 0, 1, or 2 are allowed.")
+        raise ValueError("Number of deltas is an invalid number")
+
     return cmvn_mfccs.T
 
 from sklearn.mixture import GaussianMixture

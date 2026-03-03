@@ -10,9 +10,9 @@ def train_gmm(features, n_components: int = 6, reg_covar=1e-6) -> GaussianMixtur
         raise ValueError("Features must be a 2D numpy array.")
     
     logging.debug(f"Shape of features: {features.shape}")
-    # logging.debug(f"First few samples:\n{features[:5]}")
+    logging.debug(f"First few samples:\n{features[:5]}")
     
-    gmm = GaussianMixture(n_components=n_components, random_state=0, reg_covar=reg_covar, covariance_type='diag')
+    gmm = GaussianMixture(n_components=n_components, random_state=0, warm_start=True, verbose=2, reg_covar=reg_covar, covariance_type='diag')
     gmm.fit(features)
         
     return gmm
@@ -35,7 +35,7 @@ def main():
     parser = argparse.ArgumentParser(description="GMM generator")
     parser.add_argument("--audio_dir", type=str, help="Path to the audio directory to train on")
     parser.add_argument("--n_components", type=int, help="Number of Gaussian Mixture components", default=512)
-    parser.add_argument("--n_mfcc", type=int, help="Number of MFCC features to extract", default=39)
+    parser.add_argument("--n_mfcc", type=int, help="Number of MFCC features to extract", default=13)
     parser.add_argument("--pre-extracted", type=str, help="Path to pre-extracted MFCC features .npy file")
     parser.add_argument("-v", action='store_true', help="Enable verbose logging")
     args = parser.parse_args()
