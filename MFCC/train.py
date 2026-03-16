@@ -1,29 +1,44 @@
 import logging
+import os
 from sklearn.mixture import GaussianMixture
 import numpy as np
-from classification import extract_mfcc
-from common import find_files_with_extension, npy_to_hash
+from MFCC.classification import extract_mfcc
+from MFCC.common import find_files_with_extension
+import datetime
 
 def train_gmm(features, n_components: int = 6, reg_covar=1e-6) -> GaussianMixture:
     # Check if features are a 2D array
     if not isinstance(features, np.ndarray) or len(features.shape) != 2:
         raise ValueError("Features must be a 2D numpy array.")
     
-    logging.debug(f"Shape of features: {features.shape}")
-    logging.debug(f"First few samples:\n{features[:5]}")
+    # Check for NaN or infinite values
+    if np.isnan(features).any() or np.isinf(features).any():
+        logging.error("Features contain NaNs or infinities. Please check the data preprocessing.")
+        raise ValueError("Features contain invalid values.")
     
-    gmm = GaussianMixture(n_components=n_components, random_state=0, warm_start=True, verbose=2, reg_covar=reg_covar, covariance_type='diag')
-    gmm.fit(features)
-        
+    logging.debug(f"First few samples:\n{features[:5]}")
+
+    try:
+        gmm = GaussianMixture(n_components=n_components, random_state=0,
+                              warm_start=True, verbose=2, reg_covar=reg_covar,
+                              covariance_type='diag')
+        gmm.fit(features)
+
+    except Exception as e:
+        logging.error(f"Failed to fit GMM model: {str(e)}")
+        raise
+
     return gmm
 
 from joblib import dump
 
 def save_gmm_model(gmm: GaussianMixture, model_path: str):
     try:
-        dump(gmm, model_path)
+        # Convert relative path to absolute path if necessary
+        abs_model_path = os.path.abspath(model_path)
+        dump(gmm, abs_model_path)
     except Exception as e:
-        logging.error(f"Failed to save model to {model_path}: {str(e)}")
+        logging.error(f"Failed to save model to {abs_model_path}: {str(e)}")
         raise
     
 import argparse
@@ -56,8 +71,9 @@ def main():
         try:
             npy_path = args.pre_extracted
             mfcc_features = np.load(npy_path)
-        except:
-            logging.error(f"Failed to load pre-extracted MFCC features from {args.pre_extracted}.")
+            logging.info(f"Loaded MFCC features shape: {mfcc_features.shape}")
+        except Exception as e:
+            logging.error(f"Failed to load pre-extracted MFCC features from {args.pre_extracted}: {str(e)}")
             raise
     else:
         audio_files = find_files_with_extension(args.audio_dir, extensions=[".wav", ".flac", ".mp3"])
@@ -86,11 +102,17 @@ def main():
         except Exception as e:
             logging.warning(f"Failed to save extracted features: {str(e)}")
     
+    # Reduce the dataset size for debugging purposes
+    if mfcc_features.shape[0] > 1_000_000:
+        logging.warning("Dataset is very large. Using a subset for debugging.")
+        subset_size = 1_000_000
+        mfcc_features = mfcc_features[:subset_size, :]
+    
     logging.info("\033[1;32mBeginning training of GMM model...\033[0m")
     gmm = train_gmm(mfcc_features, n_components=args.n_components)
     
-    hash = npy_to_hash(npy_path)
-    save_gmm_model(gmm, f"UBM/ubm_{hash}.pkl")
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    save_gmm_model(gmm, f"MFCC/UBM/ubm_{args.n_components}_{timestamp}.pkl")
     
 if __name__ == "__main__":
     main()
