@@ -3,8 +3,12 @@ import os
 from sklearn.mixture import GaussianMixture
 import numpy as np
 from MFCC.classification import extract_mfcc
-from MFCC.common import find_files_with_extension
+from MFCC.common import find_files_with_extension, save_gmm_model
 import datetime
+import argparse
+from multiprocessing import Pool
+from tqdm import tqdm
+from functools import partial
 
 def train_gmm(features, n_components: int = 6, reg_covar=1e-6) -> GaussianMixture:
     # Check if features are a 2D array
@@ -29,22 +33,6 @@ def train_gmm(features, n_components: int = 6, reg_covar=1e-6) -> GaussianMixtur
         raise
 
     return gmm
-
-from joblib import dump
-
-def save_gmm_model(gmm: GaussianMixture, model_path: str):
-    try:
-        # Convert relative path to absolute path if necessary
-        abs_model_path = os.path.abspath(model_path)
-        dump(gmm, abs_model_path)
-    except Exception as e:
-        logging.error(f"Failed to save model to {abs_model_path}: {str(e)}")
-        raise
-    
-import argparse
-from multiprocessing import Pool
-from tqdm import tqdm
-from functools import partial
    
 def main():
     parser = argparse.ArgumentParser(description="GMM generator")

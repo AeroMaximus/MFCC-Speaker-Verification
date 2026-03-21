@@ -1,4 +1,7 @@
 import os
+import logging
+from joblib import dump, load
+from sklearn.mixture import GaussianMixture
 
 def find_files_with_extension(directory, extensions):
     """
@@ -57,3 +60,22 @@ def npy_to_hash(npy_path):
     full_hash = hash_object.hexdigest()
     
     return full_hash
+
+def save_gmm_model(gmm: GaussianMixture, model_path: str):
+    try:
+        # Convert relative path to absolute path if necessary
+        abs_model_path = os.path.abspath(model_path)
+        dump(gmm, abs_model_path)
+    except Exception as e:
+        logging.error(f"Failed to save model to {abs_model_path}: {str(e)}")
+        raise
+    
+def load_gmm_model(model_path: str) -> GaussianMixture:
+    if not os.path.exists(model_path):
+        logging.error(f"Model path {model_path} does not exist.")
+        raise FileNotFoundError(f"Model path {model_path} does not exist.")
+    try:
+        return load(model_path)
+    except Exception as e:
+        logging.error(f"Failed to load model from {model_path}: {str(e)}")
+        raise

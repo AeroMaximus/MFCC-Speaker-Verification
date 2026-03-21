@@ -1,18 +1,12 @@
 import os
 import logging
 import librosa
-from joblib import load
 from sklearn.mixture import GaussianMixture
+import numpy as np
+from collections import deque
+import argparse
+from MFCC.common import load_gmm_model
 
-def load_gmm_model(model_path: str) -> GaussianMixture:
-    if not os.path.exists(model_path):
-        logging.error(f"Model path {model_path} does not exist.")
-        raise FileNotFoundError(f"Model path {model_path} does not exist.")
-    try:
-        return load(model_path)
-    except Exception as e:
-        logging.error(f"Failed to load model from {model_path}: {str(e)}")
-        raise
 
 def extract_mfcc(audio_path: str, sr: float | None = 16000, n_mfcc: int = 13, frame_length: int = 2048, hop_length: int = 512, n_deltas: int = 2):
     if not os.path.exists(audio_path):
@@ -49,27 +43,6 @@ def extract_mfcc(audio_path: str, sr: float | None = 16000, n_mfcc: int = 13, fr
     
     return cmvn_mfccs.T
 
-from sklearn.mixture import GaussianMixture
-
-import numpy as np
-
-def map_adaptation(gmm: GaussianMixture, mfcc_features: np.ndarray):
-    if mfcc_features.shape[1] != gmm.means_.shape[1]:
-        logging.error("Number of MFCC features does not match")
-        raise ValueError("Number of MFCC features does not match the GMM model")
-    posteriors = gmm.predict_proba(mfcc_features)
-    adapted_means = np.dot(posteriors.T, mfcc_features) / (posteriors.sum(axis=0)[:, None] + 1e-6)
-    adapted_covariances = []
-    for k in range(gmm.n_components):
-        diff = mfcc_features - gmm.means_[k]
-        weighted_diff = diff * posteriors[:, [k]]
-        cov = np.dot(weighted_diff.T, diff) / (posteriors[:, [k]].sum() + 1e-6)
-        adapted_covariances.append(cov)
-    
-    gmm.means_ = adapted_means
-    gmm.covariances_ = np.array(adapted_covariances)
-    return gmm
-
 def classify_audio(mfcc_features: np.ndarray, gmm_0: GaussianMixture, gmm_1: GaussianMixture) -> np.bool:
     if mfcc_features.shape[1] != gmm_1.means_.shape[1]:
         raise ValueError("Number of MFCC features does not match the GMM model for speaker 1")
@@ -84,8 +57,6 @@ def classify_audio(mfcc_features: np.ndarray, gmm_0: GaussianMixture, gmm_1: Gau
     else:
         return np.bool(0)
 
-from collections import deque
-
 class AudioBuffer:
     def __init__(self, max_size):
         self.max_size = max_size
@@ -98,8 +69,6 @@ class AudioBuffer:
 
     def get_buffer(self):
         return list(self.buffer)
-
-import argparse
 
 def main():
 
