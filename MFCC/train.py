@@ -1,9 +1,7 @@
 import logging
-import os
 from sklearn.mixture import GaussianMixture
 import numpy as np
-from MFCC.classification import extract_mfcc
-from MFCC.common import find_files_with_extension, save_gmm_model
+from MFCC.common import find_files_with_extension, save_gmm_model, extract_mfcc
 import datetime
 import argparse
 from multiprocessing import Pool
