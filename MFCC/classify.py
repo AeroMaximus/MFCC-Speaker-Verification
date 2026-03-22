@@ -36,6 +36,7 @@ def classify_audio_average(log_likelihood_array: np.ndarray) -> int:
 
     # Average each row
     average_log_likelihoods = np.mean(log_likelihood_array, axis=1)
+    logging.info(f"Average log-likelihood scores calculated for each speaker: {average_log_likelihoods}")
     
     # Find the speaker with the highest average log likelihood
     most_likely_speaker:int = np.argmax(average_log_likelihoods, axis=0)
