@@ -30,5 +30,5 @@ To use this repository for validating speaker similarity, follow these steps:
 
 4. **Run Classification on an Audio File**
    ```bash
-   python -m MFCC.classify /audio/file/path --gmm_0_path /path/to/UBM.pkl --gmm_1_path /path/to/speaker.pkl --return_single
+   python -m MFCC.classify /audio/file/path --gmm_0_path /path/to/UBM.pkl --gmm_1_path /path/to/speaker.pkl -return_single -v
    ```
